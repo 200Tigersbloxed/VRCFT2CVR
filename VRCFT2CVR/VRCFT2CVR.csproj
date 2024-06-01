@@ -27,6 +27,9 @@
       <Reference Include="TobiiXRSDK">
         <HintPath>$(ChilloutVRDirectory)\ChilloutVR_Data\Managed\TobiiXRSDK.dll</HintPath>
       </Reference>
+      <Reference Include="Unity.XR.OpenVR">
+        <HintPath>$(ChilloutVRDirectory)\ChilloutVR_Data\Managed\Unity.XR.OpenVR.dll</HintPath>
+      </Reference>
       <Reference Include="UnityEngine.AnimationModule">
         <HintPath>$(ChilloutVRDirectory)\ChilloutVR_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
       </Reference>
