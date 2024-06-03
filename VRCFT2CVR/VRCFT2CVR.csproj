@@ -61,12 +61,15 @@
     
     <ItemGroup>
         <ModFile Include="$(OutDir)/VRCFT2CVR.dll" />
-        <UserLibFile Include="$(OutDir)/CommunityToolkit.Mvvm.dll" />
+        <UserLibFile Include="$(VRCFaceTrackingBuild)/*.dll" />
+        <UserLibFile Remove="$(VRCFaceTrackingBuild)/fti_osc.dll" />
+        <UserLibFile Remove="$(VRCFaceTrackingBuild)/vcruntime140.dll" />
+        <!--<UserLibFile Include="$(OutDir)/CommunityToolkit.Mvvm.dll" />
         <UserLibFile Include="$(OutDir)/Microsoft.Extensions.Hosting.Abstractions.dll" />
         <UserLibFile Include="$(OutDir)/Microsoft.Extensions.Logging.Abstractions.dll" />
         <UserLibFile Include="$(OutDir)/System.Text.Json.dll" />
         <UserLibFile Include="$(OutDir)/VRCFaceTracking.Core.dll" />
-        <UserLibFile Include="$(OutDir)/VRCFaceTracking.SDK.dll" />
+        <UserLibFile Include="$(OutDir)/VRCFaceTracking.SDK.dll" />-->
         <ModsDir Include="$(OutDir)/$(AssemblyName)_$(Platform)/Mods" />
         <UserLibsDir Include="$(OutDir)/$(AssemblyName)_$(Platform)/UserLibs" />
         <SourceDirToZip Include="$(OutDir)/$(AssemblyName)_$(Platform)" />
