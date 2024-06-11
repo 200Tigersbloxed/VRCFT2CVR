@@ -16,7 +16,7 @@ using VRCFT2CVR;
 using Utils = VRCFaceTracking.Core.Utils;
 using Vector2 = VRCFaceTracking.Core.Types.Vector2;
 
-[assembly: MelonInfo(typeof(MainMod), MainMod.MOD_NAME, "1.0.1", "200Tigersbloxed")]
+[assembly: MelonInfo(typeof(MainMod), MainMod.MOD_NAME, "1.0.2", "200Tigersbloxed")]
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonOptionalDependencies("BTKUILib")]
 [assembly: HarmonyDontPatchAll]
@@ -27,7 +27,7 @@ public class MainMod : MelonMod
 {
     internal const string MOD_NAME = "VRCFT2CVR";
     
-    internal static ConvertedModule? customEyeModule;
+    private static ConvertedModule? customEyeModule;
     private static ParameterDriver? parameterDriver;
     private static PlayerSetup? lastPlayerSetup;
     private static List<ConvertedModule> convertedModules = new();
@@ -36,6 +36,11 @@ public class MainMod : MelonMod
     private string? modulesPath;
     private bool loaded;
     private bool didIntegrate;
+
+    public override void OnEarlyInitializeMelon() => HarmonyInstance.Patch(
+        typeof(OpenVRHelpers).GetMethod("IsUsingSteamVRInput"),
+        new HarmonyMethod(typeof(OpenVR_IsUsingSteamVRInputPatch).GetMethod("Prefix",
+            BindingFlags.Static | BindingFlags.NonPublic)));
 
     public override void OnUpdate()
     {
@@ -48,7 +53,6 @@ public class MainMod : MelonMod
             lastPlayerSetup = playerSetup;
         }
         UnifiedTrackingData data = UnifiedTracking.Data;
-        if(data == null) return;
         parameterDriver?.Update(data);
     }
 
@@ -65,9 +69,6 @@ public class MainMod : MelonMod
         if (!Directory.Exists(persistentData)) Directory.CreateDirectory(persistentData);
         Utils.CustomLibsDirectory = modulesPath;
         Utils.PersistentDataDirectory = persistentData;
-        HarmonyInstance.Patch(typeof(OpenVRHelpers).GetMethod("IsUsingSteamVRInput"),
-            new HarmonyMethod(typeof(OpenVR_IsUsingSteamVRInputPatch).GetMethod("Prefix",
-                BindingFlags.Static | BindingFlags.NonPublic)));
         foreach (string module in Directory.GetFiles(modulesPath))
         {
             string fileExt = Path.GetExtension(module);
