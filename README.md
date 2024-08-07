@@ -53,6 +53,8 @@ Default: **true**
 
 ## Building
 
+Before building, you must build [TigersUniverse/VRCFaceTracking](https://github.com/TigersUniverse/VRCFaceTracking) because this mod relies on dependencies from there.
+
 The building process is split into the two projects.
 
 **VRCFT2CVR**
