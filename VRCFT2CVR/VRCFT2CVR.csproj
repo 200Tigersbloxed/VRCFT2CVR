@@ -27,9 +27,6 @@
       <Reference Include="TobiiXRSDK">
         <HintPath>$(ChilloutVRDirectory)\ChilloutVR_Data\Managed\TobiiXRSDK.dll</HintPath>
       </Reference>
-      <Reference Include="Unity.XR.OpenVR">
-        <HintPath>$(ChilloutVRDirectory)\ChilloutVR_Data\Managed\Unity.XR.OpenVR.dll</HintPath>
-      </Reference>
       <Reference Include="UnityEngine.AnimationModule">
         <HintPath>$(ChilloutVRDirectory)\ChilloutVR_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
       </Reference>
@@ -58,43 +55,8 @@
     <ItemGroup>
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
     </ItemGroup>
-    
-    <ItemGroup>
-        <ModFile Include="$(OutDir)/VRCFT2CVR.dll" />
-        <UserLibFile Include="$(VRCFaceTrackingBuild)/*.dll" />
-        <UserLibFile Remove="$(VRCFaceTrackingBuild)/fti_osc.dll" />
-        <UserLibFile Remove="$(VRCFaceTrackingBuild)/vcruntime140.dll" />
-        <!--<UserLibFile Include="$(OutDir)/CommunityToolkit.Mvvm.dll" />
-        <UserLibFile Include="$(OutDir)/Microsoft.Extensions.Hosting.Abstractions.dll" />
-        <UserLibFile Include="$(OutDir)/Microsoft.Extensions.Logging.Abstractions.dll" />
-        <UserLibFile Include="$(OutDir)/System.Text.Json.dll" />
-        <UserLibFile Include="$(OutDir)/VRCFaceTracking.Core.dll" />
-        <UserLibFile Include="$(OutDir)/VRCFaceTracking.SDK.dll" />-->
-        <ModsDir Include="$(OutDir)/$(AssemblyName)_$(Platform)/Mods" />
-        <UserLibsDir Include="$(OutDir)/$(AssemblyName)_$(Platform)/UserLibs" />
-        <SourceDirToZip Include="$(OutDir)/$(AssemblyName)_$(Platform)" />
-        <OutputZip Include="$(OutDir)\$(AssemblyName).zip" />
-    </ItemGroup>
-    
-    <ItemGroup Condition="'$(Configuration)'=='Debug'">
-        <ModFile Include="$(OutDir)/VRCFT2CVR.pdb" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <Compile Remove="bin\**" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <Content Include="VRCFT2CVR.csproj.user" />
-    </ItemGroup>
 
-    <Target Name="ZipOutputPath" AfterTargets="Build">
-        <Delete Files="@(OutputZip)" ContinueOnError="true" />
-        <Copy SourceFiles="@(ModFile)" DestinationFolder="@(ModsDir)" />
-        <Copy SourceFiles="@(UserLibFile)" DestinationFolder="@(UserLibsDir)" />
-        <ZipDirectory
-                SourceDirectory="@(SourceDirToZip)"
-                DestinationFile="@(OutputZip)" />
-        <RemoveDir Directories="@(SourceDirToZip)" />
-    </Target>
+    <ItemGroup>
+        <Content Include="VRCFT2CVR.csproj.user" />
+    </ItemGroup>
 </Project>

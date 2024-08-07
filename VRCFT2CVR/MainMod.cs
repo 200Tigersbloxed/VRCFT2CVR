@@ -8,7 +8,6 @@ using HarmonyLib;
 using MelonLoader;
 using Tobii.Gaming;
 using Tobii.XR;
-using Unity.XR.OpenVR;
 using UnityEngine;
 using VRCFaceTracking;
 using VRCFaceTracking.Core.Params.Data;
@@ -16,8 +15,10 @@ using VRCFT2CVR;
 using Utils = VRCFaceTracking.Core.Utils;
 using Vector2 = VRCFaceTracking.Core.Types.Vector2;
 
-[assembly: MelonInfo(typeof(MainMod), MainMod.MOD_NAME, "1.0.2", "200Tigersbloxed")]
+[assembly: MelonInfo(typeof(MainMod), MainMod.MOD_NAME, "1.1.0", "200Tigersbloxed")]
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
+[assembly: MelonColor(255, 144, 242, 35)]
+[assembly: MelonAuthorColor(255, 252, 100, 0)]
 [assembly: MelonOptionalDependencies("BTKUILib")]
 [assembly: HarmonyDontPatchAll]
 
@@ -37,11 +38,6 @@ public class MainMod : MelonMod
     private bool loaded;
     private bool didIntegrate;
 
-    public override void OnEarlyInitializeMelon() => HarmonyInstance.Patch(
-        typeof(OpenVRHelpers).GetMethod("IsUsingSteamVRInput"),
-        new HarmonyMethod(typeof(OpenVR_IsUsingSteamVRInputPatch).GetMethod("Prefix",
-            BindingFlags.Static | BindingFlags.NonPublic)));
-
     public override void OnUpdate()
     {
         if(!loaded) return;
@@ -60,11 +56,9 @@ public class MainMod : MelonMod
     {
         if(loaded) return;
         if(FaceTrackingManager.Instance == null || EyeTrackingManager.Instance == null) return;
-        modulesPath = Path.Combine(Directory.GetParent(Path.GetDirectoryName(MelonAssembly.Location)!)!.FullName,
-            "VRCFTModules");
-        string persistentData =
-            Path.Combine(Directory.GetParent(Path.GetDirectoryName(MelonAssembly.Location)!)!.FullName, "UserData",
-                "VRCFTData");
+        string gameDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        modulesPath = Path.Combine(gameDirectory, "VRCFTModules");
+        string persistentData = Path.Combine(gameDirectory, "UserData", "VRCFTData");
         if (!Directory.Exists(modulesPath)) Directory.CreateDirectory(modulesPath);
         if (!Directory.Exists(persistentData)) Directory.CreateDirectory(persistentData);
         Utils.CustomLibsDirectory = modulesPath;
@@ -222,6 +216,17 @@ public class MainMod : MelonMod
             return false;
         }
     }
+    
+    [HarmonyPatch(typeof(TobiiXR_Settings), nameof(TobiiXR_Settings.GetProvider), new Type[0])]
+    private class TobiiAPI_GetProviderPatch
+    {
+        static bool Prefix(ref IEyeTrackingProvider __result)
+        {
+            if (customEyeModule == null) return true;
+            __result = customEyeModule;
+            return false;
+        }
+    }
 
     [HarmonyPatch(typeof(TobiiAPI), nameof(TobiiAPI.GetGazePoint), new Type[0])]
     private class TobiiAPI_GetGazePointPatch
@@ -274,64 +279,4 @@ public class MainMod : MelonMod
             return codes.AsEnumerable();
         }
     }
-    
-    #region TemporaryFixes
-    
-    /*
-     * These are temporary fixes!
-     * Currently, because of all of the libraries that VRCFaceTracking needs, some don't 'register' correctly.
-     * Whenever Assemblies in the same AppDomain attempt to access types for this mod's classes,
-     * an exception for a missing type is thrown (which it is correct, it is missing).
-     * I am currently stumped on how to resolve all of these libraries without error, but it has proven difficult.
-     * 
-     * Here's a list of things I've currently tried to fix this mystery issue:
-     * 1) Merging all VRCFaceTracking libraries with ILRepack
-     *   + System.ComponentModel.DataAnnotations won't let this work
-     * 2) Merging all VRCFaceTracking libraries with ILMerge
-     *   + System.ComponentModel.DataAnnotations won't let this work
-     * 3) Dumping all the libraries in UserLibs
-     *   + System.ComponentModel.DataAnnotations is still missing, even with its direct reference dll added
-     *
-     * Here's some proposed solutions
-     * 1) Remove all VRCFaceTracking.Core and its libraries and only access required dependencies with
-     *    AppDomain.AssemblyResolve
-     *   + This would require a LOT of reflection and might not even work
-     *   + This is not a good solution
-     * 2) Load modules and their necessary dependencies into a separate AppDomain
-     *   + This would prevent Assembly.GetTypes() from failing in the main AppDomain
-     *   + This is currently the best solution
-     * 3) Remove the Community.Mvvm dependency (relies on System.ComponentModel.Annotations a.k.a. the big problem)
-     *   + This would require an entire rewrite of VRCFaceTracking.Core (not fun)
-     * 4) Remove the System.ComponentModel.Annotations dependency
-     *   + This would require a partial rewrite of the Community.Mvvm library (also not fun)
-     *
-     * Currently, these two patches prevent the following from happening:
-     * 1) Prevent the TobiiAPI from getting the wrong provider
-     *   + This is good and will probably stay
-     * 2) Prevent the TobiiAPI from breaking itself (because of us) by getting all of the Assembly's types
-     * 3) Prevent OpenVR from breaking itself (again, because of us) by getting all of the Assembly's types
-     */
-    
-    [HarmonyPatch(typeof(TobiiXR_Settings), nameof(TobiiXR_Settings.GetProvider), new Type[0])]
-    private class TobiiAPI_GetProviderPatch
-    {
-        static bool Prefix(ref IEyeTrackingProvider __result)
-        {
-            if (customEyeModule == null) return true;
-            __result = customEyeModule;
-            return false;
-        }
-    }
-    
-    [HarmonyPatch(typeof(OpenVRHelpers), nameof(OpenVRHelpers.IsUsingSteamVRInput), new Type[0])]
-    private class OpenVR_IsUsingSteamVRInputPatch
-    {
-        static bool Prefix(ref bool __result)
-        {
-            __result = true;
-            return false;
-        }
-    }
-    
-    #endregion
 }

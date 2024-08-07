@@ -397,3 +397,6 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 .idea/
+
+# VRCFT2CVR Build Copy
+VRCFT2CVR.Plugin/*.dll

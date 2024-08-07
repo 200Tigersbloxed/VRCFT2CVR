@@ -1,0 +1,80 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net481</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>12</LangVersion>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <DebugType>none</DebugType>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <Reference Include="MelonLoader">
+          <HintPath>$(ChilloutVRDirectory)\MelonLoader\net35\MelonLoader.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\CommunityToolkit.Mvvm.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Bcl.AsyncInterfaces.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Configuration.Abstractions.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Configuration.Binder.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Configuration.CommandLine.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Configuration.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Configuration.EnvironmentVariables.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Configuration.FileExtensions.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Configuration.Json.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Configuration.UserSecrets.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.DependencyInjection.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.FileProviders.Abstractions.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.FileProviders.Physical.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.FileSystemGlobbing.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Hosting.Abstractions.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Hosting.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Logging.Abstractions.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Logging.Configuration.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Logging.Console.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Logging.Debug.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Logging.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Logging.EventLog.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Logging.EventSource.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Options.ConfigurationExtensions.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Options.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Primitives.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Win32.Registry.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\System.Buffers.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\System.ComponentModel.Annotations.dll" />
+      <EmbeddedResource Include="$(DataAnnotationsFile)" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\System.Diagnostics.DiagnosticSource.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\System.Memory.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\System.Numerics.Vectors.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\System.Runtime.CompilerServices.Unsafe.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\System.Security.AccessControl.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\System.Security.Principal.Windows.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\System.Text.Encodings.Web.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\System.Text.Json.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\System.Threading.Tasks.Extensions.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\System.ValueTuple.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\VRCFaceTracking.Core.dll" />
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\VRCFaceTracking.SDK.dll" />
+      <None Remove="VRCFT2CVR.dll" />
+      <EmbeddedResource Include="VRCFT2CVR.dll" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="VRCFT2CVR.Plugin.csproj.user" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ModFile Include="../VRCFT2CVR/bin/$(Configuration)/net481/VRCFT2CVR.dll" />
+    </ItemGroup>
+    
+    <Target Name="Build" BeforeTargets="Build">
+        <Copy SourceFiles="@(ModFile)" DestinationFolder="./" />
+    </Target>
+
+</Project>
