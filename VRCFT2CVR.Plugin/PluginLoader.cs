@@ -2,7 +2,7 @@
 using MelonLoader;
 using VRCFT2CVR.Plugin;
 
-[assembly: MelonInfo(typeof(PluginLoader), "VRCFT2CVR.Plugin", "1.1.0", "200Tigersbloxed")]
+[assembly: MelonInfo(typeof(PluginLoader), "VRCFT2CVR.Plugin", "1.1.1", "200Tigersbloxed")]
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonColor(255, 144, 242, 35)]
 [assembly: MelonAuthorColor(255, 252, 100, 0)]

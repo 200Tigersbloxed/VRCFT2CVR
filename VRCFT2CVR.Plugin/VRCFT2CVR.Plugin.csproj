@@ -5,8 +5,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>12</LangVersion>
-        <AssemblyVersion>1.1.0</AssemblyVersion>
-        <FileVersion>1.1.0</FileVersion>
+        <AssemblyVersion>1.1.1</AssemblyVersion>
+        <FileVersion>1.1.1</FileVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -70,13 +70,9 @@
     <ItemGroup>
       <Content Include="VRCFT2CVR.Plugin.csproj.user" />
     </ItemGroup>
-
-    <ItemGroup>
-        <ModFile Include="../VRCFT2CVR/bin/$(Configuration)/net481/VRCFT2CVR.dll" />
-    </ItemGroup>
     
-    <Target Name="Build" BeforeTargets="Build">
-        <Copy SourceFiles="@(ModFile)" DestinationFolder="./" />
+    <Target Name="CopyCustomContent" BeforeTargets="Build">
+        <Copy SourceFiles="../VRCFT2CVR/bin/$(Configuration)/net481/VRCFT2CVR.dll" DestinationFolder="./" />
     </Target>
 
 </Project>

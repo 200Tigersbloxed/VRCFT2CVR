@@ -1,11 +1,11 @@
-﻿using System.Reflection;
+﻿#define NOIMAGE
+using System.Reflection;
 using MelonLoader;
 
 namespace VRCFT2CVR;
 
 internal class OptionalUI
 {
-    private const string COMMONBTKUI_NAME = "Daky.DakyBTKUI";
     private const string QUICKMENUAPI_NAME = "BTKUILib.QuickMenuAPI";
     private const string PAGE_TYPE_NAME = "BTKUILib.UIObjects.Page";
     private const string CATEGORY_TYPE_NAME = "BTKUILib.UIObjects.Category";
@@ -16,14 +16,12 @@ internal class OptionalUI
     
     internal OptionalUI()
     {
-        Type? commonType = null;
         Type? quickMenuAPIType = null;
         Type? pageType = null;
         Type? categoryType = null;
         Type? toggleType = null;
         foreach (MelonAssembly melonAssembly in MelonAssembly.LoadedAssemblies)
         {
-            commonType ??= melonAssembly.Assembly.GetType(COMMONBTKUI_NAME);
             quickMenuAPIType ??= melonAssembly.Assembly.GetType(QUICKMENUAPI_NAME);
             pageType ??= melonAssembly.Assembly.GetType(PAGE_TYPE_NAME);
             categoryType ??= melonAssembly.Assembly.GetType(CATEGORY_TYPE_NAME);
@@ -35,15 +33,7 @@ internal class OptionalUI
                 "BTKUI was not detected! You must set settings manually through the MelonPreferences file.");
             return;
         }
-        if (commonType != null)
-        {
-            commonType.GetMethod("AutoGenerateCategory")!.Invoke(null, new object?[2]
-            {
-                Config.preferencesCategory,
-                null
-            });
-            return;
-        }
+#if !NOIMAGE
         // Prepare the icon
         quickMenuAPIType.GetMethod("PrepareIcon")!.Invoke(null, new object[3]
         {
@@ -56,6 +46,9 @@ internal class OptionalUI
             "VRCFTIcon", null, false);
         pageType.GetProperty("MenuTitle")!.SetValue(rootPage, MainMod.MOD_NAME + "Settings");
         pageType.GetProperty("MenuSubtitle")!.SetValue(rootPage, "Edit Settings for " + MainMod.MOD_NAME);
+#else
+        rootPage = quickMenuAPIType.GetProperty("MiscTabPage")!.GetValue(null);
+#endif
         // Add the Category
         rootCategory =
             pageType.GetMethod("AddCategory", new Type[1] {typeof(string)})!.Invoke(rootPage,

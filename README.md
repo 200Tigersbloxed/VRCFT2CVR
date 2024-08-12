@@ -21,7 +21,7 @@ Natively integrated VRCFaceTracking in ChilloutVR
 
 > [!TIP]
 > 
-> You can install [BTKUILib](https://github.com/BTK-Development/BTKUILib) (and optionally with [CommonBTKUI](https://github.com/dakyneko/DakyModsCVR/tree/master/CommonBTKUI)) to manage config options in-game; however, some options may require a game restart.
+> You can install [BTKUILib](https://github.com/BTK-Development/BTKUILib) to manage config options in-game; however, some options may require a game restart.
 
 ### Integrated Tracking Support
 
