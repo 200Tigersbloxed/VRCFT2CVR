@@ -15,7 +15,7 @@ Natively integrated VRCFaceTracking in ChilloutVR
 > 
 > All VRCFT Modules have to be recompiled to support TigersUniverse's [VRCFaceTracking](https://github.com/TigersUniverse/VRCFaceTracking) with `net481` support!
 > 
-> You can find a list of precompiled modules [here](https://github.com/TigersUniverse/VRCFaceTracking?tab=readme-ov-file#-external-modules)
+> You can find a list of precompiled modules [here](https://docs.hypernex.dev/docs/nexadamy/extra/facetracking#modules)
 
 ## Configuration
 
