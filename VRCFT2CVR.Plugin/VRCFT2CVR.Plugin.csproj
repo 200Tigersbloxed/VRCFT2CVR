@@ -5,8 +5,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>12</LangVersion>
-        <AssemblyVersion>1.1.1</AssemblyVersion>
-        <FileVersion>1.1.1</FileVersion>
+        <AssemblyVersion>1.2.0</AssemblyVersion>
+        <FileVersion>1.2.0</FileVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -20,6 +20,7 @@
     </ItemGroup>
     
     <ItemGroup>
+      <!-- Managed Assemblies -->
       <EmbeddedResource Include="$(VRCFaceTrackingBuild)\CommunityToolkit.Mvvm.dll" />
       <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Bcl.AsyncInterfaces.dll" />
       <EmbeddedResource Include="$(VRCFaceTrackingBuild)\Microsoft.Extensions.Configuration.Abstractions.dll" />
@@ -65,6 +66,8 @@
       <EmbeddedResource Include="$(VRCFaceTrackingBuild)\VRCFaceTracking.SDK.dll" />
       <None Remove="VRCFT2CVR.dll" />
       <EmbeddedResource Include="VRCFT2CVR.dll" />
+      <!-- Native Assemblies -->
+      <EmbeddedResource Include="$(VRCFaceTrackingBuild)\fti_osc.dll" />
     </ItemGroup>
 
     <ItemGroup>

@@ -15,7 +15,7 @@ using VRCFT2CVR;
 using Utils = VRCFaceTracking.Core.Utils;
 using Vector2 = VRCFaceTracking.Core.Types.Vector2;
 
-[assembly: MelonInfo(typeof(MainMod), MainMod.MOD_NAME, "1.1.1", "200Tigersbloxed")]
+[assembly: MelonInfo(typeof(MainMod), MainMod.MOD_NAME, "1.2.0", "200Tigersbloxed")]
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonColor(255, 144, 242, 35)]
 [assembly: MelonAuthorColor(255, 252, 100, 0)]

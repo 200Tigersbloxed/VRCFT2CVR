@@ -1,8 +1,11 @@
 ﻿using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 using MelonLoader;
 using VRCFT2CVR.Plugin;
 
-[assembly: MelonInfo(typeof(PluginLoader), "VRCFT2CVR.Plugin", "1.1.1", "200Tigersbloxed")]
+[assembly: MelonInfo(typeof(PluginLoader), "VRCFT2CVR.Plugin", "1.2.0", "200Tigersbloxed")]
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonColor(255, 144, 242, 35)]
 [assembly: MelonAuthorColor(255, 252, 100, 0)]
@@ -15,8 +18,25 @@ public class PluginLoader : MelonPlugin
     private const string MOD_RESOURCE = BEGIN_TOOLNAMESPACE + ".VRCFT2CVR.dll";
 
     private static readonly Dictionary<string, Assembly> LoadedAssemblies = new();
+    private static readonly IReadOnlyList<string> NativeAssemblies = new[]
+    {
+        BEGIN_TOOLNAMESPACE + ".fti_osc.dll"
+    };
     
     private Assembly? CurrentAssembly;
+    
+    [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern IntPtr LoadLibrary(string lpFileName);
+    
+    public static string CalculateMD5(byte[] data)
+    {
+        using MD5 md5 = MD5.Create();
+        byte[] hash = md5.ComputeHash(data);
+        StringBuilder sb = new StringBuilder();
+        foreach (var t in hash)
+            sb.Append(t.ToString("x2"));
+        return sb.ToString();
+    }
 
     private byte[]? GetDllData(Assembly assembly, string dll)
     {
@@ -30,6 +50,32 @@ public class PluginLoader : MelonPlugin
         stream.CopyTo(memoryStream);
         return memoryStream.ToArray();
     }
+
+    private void HandleManaged(string dll, byte[] data)
+    {
+        Assembly a = AppDomain.CurrentDomain.Load(data);
+        LoadedAssemblies.Add(dll, a);
+    }
+
+    private void HandleNative(string dll, byte[] data)
+    {
+        string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory , "UserData", "VRCFTData");
+        if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+        string fileName = dll.Remove(0, BEGIN_TOOLNAMESPACE.Length + 1);
+        string file = Path.Combine(path, fileName);
+        if (File.Exists(file))
+        {
+            string fileMD5 = CalculateMD5(data);
+            string compareMD5 = CalculateMD5(File.ReadAllBytes(file));
+            if(fileMD5 == compareMD5)
+            {
+                LoadLibrary(file);
+                return;
+            }
+        }
+        File.WriteAllBytes(file, data);
+        LoadLibrary(file);
+    }
     
     public override void OnPreInitialization()
     {
@@ -40,8 +86,12 @@ public class PluginLoader : MelonPlugin
         {
             byte[]? data = GetDllData(CurrentAssembly, dll);
             if(data == null) continue;
-            Assembly a = AppDomain.CurrentDomain.Load(data);
-            LoadedAssemblies.Add(dll, a);
+            if (NativeAssemblies.Contains(dll))
+            {
+                HandleNative(dll, data);
+                continue;
+            }
+            HandleManaged(dll, data);
         }
         LoggerInstance.Msg("Loaded all dependencies!");
         MelonEvents.OnPreModsLoaded.Subscribe(() =>
