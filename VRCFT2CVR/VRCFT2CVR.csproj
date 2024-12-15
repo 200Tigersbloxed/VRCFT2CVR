@@ -5,8 +5,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>12</LangVersion>
-        <AssemblyVersion>1.2.0</AssemblyVersion>
-        <FileVersion>1.2.0</FileVersion>
+        <AssemblyVersion>1.3.0</AssemblyVersion>
+        <FileVersion>1.3.0</FileVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -35,6 +35,9 @@
       <Reference Include="UnityEngine.CoreModule">
         <HintPath>$(ChilloutVRDirectory)\ChilloutVR_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       </Reference>
+      <Reference Include="Newtonsoft.Json">
+          <HintPath>$(ChilloutVRDirectory)\ChilloutVR_Data\Managed\Newtonsoft.Json.dll</HintPath>
+      </Reference>
       <Reference Include="UnityEngine.IMGUIModule">
         <HintPath>$(ChilloutVRDirectory)\ChilloutVR_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
       </Reference>
@@ -47,11 +50,13 @@
     </ItemGroup>
 
     <ItemGroup>
+      <EmbeddedResource Include="Icons\FaceTrackingIcon3.png" />
       <None Remove="FaceTrackingIcon3.png" />
-      <EmbeddedResource Include="FaceTrackingIcon3.png" />
       <None Remove="System.ComponentModel.Annotations.dll" />
       <EmbeddedResource Remove="bin\**" />
       <None Remove="bin\**" />
+      <None Remove="Icons\rotate.png" />
+      <EmbeddedResource Include="Icons\rotate.png" />
     </ItemGroup>
 
     <ItemGroup>

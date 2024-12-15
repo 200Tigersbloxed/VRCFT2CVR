@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Reflection.Emit;
+using ABI_RC.API;
 using ABI_RC.Core.Player;
 using ABI_RC.Core.Player.EyeMovement;
 using ABI_RC.Core.Savior;
@@ -12,10 +13,11 @@ using UnityEngine;
 using VRCFaceTracking;
 using VRCFaceTracking.Core.Params.Data;
 using VRCFT2CVR;
+using Object = UnityEngine.Object;
 using Utils = VRCFaceTracking.Core.Utils;
 using Vector2 = VRCFaceTracking.Core.Types.Vector2;
 
-[assembly: MelonInfo(typeof(MainMod), MainMod.MOD_NAME, "1.2.0", "200Tigersbloxed")]
+[assembly: MelonInfo(typeof(MainMod), MainMod.MOD_NAME, "1.3.0", "200Tigersbloxed")]
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonColor(255, 144, 242, 35)]
 [assembly: MelonAuthorColor(255, 252, 100, 0)]
@@ -27,14 +29,12 @@ namespace VRCFT2CVR;
 public class MainMod : MelonMod
 {
     internal const string MOD_NAME = "VRCFT2CVR";
-    
-    private static ConvertedModule? customEyeModule;
+
+    private static readonly ConvertedModule GlobalModule = new();
     private static ParameterDriver? parameterDriver;
     private static PlayerSetup? lastPlayerSetup;
-    private static List<ConvertedModule> convertedModules = new();
     private static OptionalUI? optionalUI;
     
-    private string? modulesPath;
     private bool loaded;
     private bool didIntegrate;
 
@@ -55,40 +55,23 @@ public class MainMod : MelonMod
     public override void OnLateUpdate()
     {
         if(loaded) return;
-        if(FaceTrackingManager.Instance == null || EyeTrackingManager.Instance == null) return;
+        Player? localPlayer = GetLocalPlayer();
+        if(FaceTrackingManager.Instance == null || EyeTrackingManager.Instance == null || localPlayer == null) return;
+        if (Runner.Instance == null)
+        {
+            GameObject runner = new GameObject("VRCFT2CVRRunner");
+            runner.AddComponent<Runner>();
+            Object.DontDestroyOnLoad(runner);
+        }
         string gameDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        modulesPath = Path.Combine(gameDirectory, "VRCFTModules");
+        string modulesPath = Path.Combine(gameDirectory, "VRCFTModules");
         string persistentData = Path.Combine(gameDirectory, "UserData", "VRCFTData");
         if (!Directory.Exists(modulesPath)) Directory.CreateDirectory(modulesPath);
         if (!Directory.Exists(persistentData)) Directory.CreateDirectory(persistentData);
         Utils.CustomLibsDirectory = modulesPath;
         Utils.PersistentDataDirectory = persistentData;
-        foreach (string module in Directory.GetFiles(modulesPath))
-        {
-            string fileExt = Path.GetExtension(module);
-            if(fileExt != ".dll") continue;
-            try
-            {
-                Assembly assembly = Assembly.LoadFile(module);
-                Type[] moduleTypes =
-                    assembly.GetTypes().Where(x => x.IsSubclassOf(typeof(ExtTrackingModule))).ToArray();
-                foreach (Type moduleType in moduleTypes)
-                {
-                    ExtTrackingModule extTrackingModule = (ExtTrackingModule) Activator.CreateInstance(moduleType)!;
-                    ConvertedModule convertedModule = new ConvertedModule(extTrackingModule);
-                    FaceTrackingManager.Instance.RegisterModule(convertedModule);
-                    convertedModules.Add(convertedModule);
-                    MelonLogger.Msg("Loaded " + (string.IsNullOrEmpty(extTrackingModule.ModuleInformation.Name)
-                        ? Path.GetFileNameWithoutExtension(module)
-                        : extTrackingModule.ModuleInformation.Name));
-                }
-            }
-            catch (Exception e)
-            {
-                MelonLogger.Error("Failed to load module at " + module + "!", e);
-            }
-        }
-        ParameterDriver.UseBinary = Config.UseBinaryParameters;
+        VRCFTParameters.UseBinary = Config.UseBinaryParameters;
+        Hypernex.ExtendedTracking.FaceTrackingManager.Init(localPlayer, LoggerInstance);
         try
         {
             if (!Config.IntegratedTrackingSupport) return;
@@ -123,25 +106,21 @@ public class MainMod : MelonMod
             FieldInfo registeredModulesField = faceTrackingManagerType.GetField("_registeredTrackingModules", BindingFlags.Instance | BindingFlags.NonPublic)!;
             List<ITrackingModule> registeredModules =
                 (List<ITrackingModule>) registeredModulesField.GetValue(FaceTrackingManager.Instance);
-            registeredModules.RemoveAll(x => !convertedModules.Contains(x));
+            registeredModules.Clear();
+            registeredModules.Add(GlobalModule);
             registeredModulesField.SetValue(FaceTrackingManager.Instance, registeredModules);
             // Start the Face Tracking
             FaceTrackingManager.Instance.Initialize();
             faceTrackingManagerType.GetProperty("_settingEnabled")!.GetSetMethod(true)
                 .Invoke(FaceTrackingManager.Instance, new object[1] {true});
             // Eye Tracking
-            object activeEyeModule = activeEyeField.GetValue(FaceTrackingManager.Instance);
-            if (activeEyeModule is ConvertedModule)
-            {
-                customEyeModule = (ConvertedModule) activeEyeModule;
-                object _tobii =
-                    typeof(EyeTrackingManager).GetField("_tobii", BindingFlags.Instance | BindingFlags.NonPublic)!
-                        .GetValue(
-                            EyeTrackingManager.Instance);
-                object Settings = _tobii.GetType().GetField("Settings").GetValue(_tobii);
-                Settings.GetType().GetField("_eyeTrackingProvider", BindingFlags.Instance | BindingFlags.NonPublic)!
-                    .SetValue(Settings, customEyeModule);
-            }
+            object _tobii =
+                typeof(EyeTrackingManager).GetField("_tobii", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .GetValue(
+                        EyeTrackingManager.Instance);
+            object Settings = _tobii.GetType().GetField("Settings").GetValue(_tobii);
+            Settings.GetType().GetField("_eyeTrackingProvider", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .SetValue(Settings, GlobalModule);
             typeof(EyeTrackingManager).GetProperty("_settingTrackingEnabled")!.GetSetMethod(true)
                 .Invoke(EyeTrackingManager.Instance, new object[1] {true});
             typeof(EyeTrackingManager).GetProperty("_settingBlinkingEnabled")!.GetSetMethod(true)
@@ -167,21 +146,7 @@ public class MainMod : MelonMod
         }
     }
 
-    public override void OnApplicationQuit()
-    {
-        if(!didIntegrate) return;
-        convertedModules.ForEach(module =>
-        {
-            try
-            {
-                module.Shutdown();
-            }
-            catch (Exception e)
-            {
-                MelonLogger.Error("Failed to Shutdown module " + module.Name + " for reason " + e);
-            }
-        });
-    }
+    public override void OnApplicationQuit() => Hypernex.ExtendedTracking.FaceTrackingManager.Destroy();
 
     private void NoIntegratedLoad()
     {
@@ -191,19 +156,6 @@ public class MainMod : MelonMod
             .Invoke(EyeTrackingManager.Instance, new object[1] {false});
         typeof(EyeTrackingManager).GetProperty("_settingBlinkingEnabled")!.GetSetMethod(true)
             .Invoke(EyeTrackingManager.Instance, new object[1] {false});
-        convertedModules.ForEach(module =>
-        {
-            try
-            {
-                (bool, bool) r = module.Initialize(true, true);
-                if(r.Item1) MelonLogger.Msg("Loaded EyeTracking for module " + module.Name);
-                if(r.Item2) MelonLogger.Msg("Loaded LipTracking for module " + module.Name);
-            }
-            catch (Exception e)
-            {
-                MelonLogger.Error("Failed to load module " + module.Name + " for reason " + e);
-            }
-        });
     }
 
     [HarmonyPatch(typeof(TobiiAPI))]
@@ -222,8 +174,8 @@ public class MainMod : MelonMod
     {
         static bool Prefix(ref IEyeTrackingProvider __result)
         {
-            if (customEyeModule == null) return true;
-            __result = customEyeModule;
+            if (!GlobalModule.IsEyeDataAvailable()) return true;
+            __result = GlobalModule;
             return false;
         }
     }
@@ -237,7 +189,7 @@ public class MainMod : MelonMod
         
         static bool Prefix(ref GazePoint __result)
         {
-            if (customEyeModule == null) return true;
+            if (!GlobalModule.IsEyeDataAvailable()) return true;
             Vector2 gaze = UnifiedTracking.Data.Eye.Combined().Gaze;
             __result = new GazePoint(new UnityEngine.Vector2(ConvertRange(gaze.x), ConvertRange(gaze.y)),
                 Time.unscaledTime / 1000000f, DateTime.Now.Ticks / (TimeSpan.TicksPerMillisecond / 1000));
@@ -250,8 +202,8 @@ public class MainMod : MelonMod
     {
         static bool Prefix(ref TobiiXR_EyeTrackingData __result, TobiiXR_TrackingSpace trackingSpace)
         {
-            if (customEyeModule == null) return true;
-            TobiiXR_EyeTrackingData eyeTrackingData = customEyeModule.EyeTrackingDataLocal;
+            if (!GlobalModule.IsEyeDataAvailable()) return true;
+            TobiiXR_EyeTrackingData eyeTrackingData = GlobalModule.EyeTrackingDataLocal;
             eyeTrackingData.GazeRay.IsValid = false;
             __result = eyeTrackingData;
             return false;
@@ -278,5 +230,13 @@ public class MainMod : MelonMod
             }
             return codes.AsEnumerable();
         }
+    }
+
+    private Player? GetLocalPlayer()
+    {
+        Type playerAPIClass = typeof(PlayerAPI);
+        FieldInfo? fieldInfo = playerAPIClass.GetField("_localPlayer", BindingFlags.Static | BindingFlags.NonPublic);
+        if (fieldInfo == null) return null;
+        return (Player) fieldInfo.GetValue(null);
     }
 }
