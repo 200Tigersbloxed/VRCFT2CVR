@@ -17,7 +17,7 @@ using Object = UnityEngine.Object;
 using Utils = VRCFaceTracking.Core.Utils;
 using Vector2 = VRCFaceTracking.Core.Types.Vector2;
 
-[assembly: MelonInfo(typeof(MainMod), MainMod.MOD_NAME, "1.3.0", "200Tigersbloxed")]
+[assembly: MelonInfo(typeof(MainMod), MainMod.MOD_NAME, "1.3.1", "200Tigersbloxed")]
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 [assembly: MelonColor(255, 144, 242, 35)]
 [assembly: MelonAuthorColor(255, 252, 100, 0)]
@@ -232,11 +232,5 @@ public class MainMod : MelonMod
         }
     }
 
-    private Player? GetLocalPlayer()
-    {
-        Type playerAPIClass = typeof(PlayerAPI);
-        FieldInfo? fieldInfo = playerAPIClass.GetField("_localPlayer", BindingFlags.Static | BindingFlags.NonPublic);
-        if (fieldInfo == null) return null;
-        return (Player) fieldInfo.GetValue(null);
-    }
+    private Player? GetLocalPlayer() => PlayerAPI.LocalPlayerInternal;
 }
