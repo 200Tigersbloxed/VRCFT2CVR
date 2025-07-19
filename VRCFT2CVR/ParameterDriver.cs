@@ -18,7 +18,7 @@ public class ParameterDriver
 
     private void UpdateParameters()
     {
-        parameters = new Dictionary<string, CVRAnimatorManager.ParamDef>(playerSetup.animatorManager.Parameters).Values
+        parameters = new Dictionary<string, CVRAnimatorManager.ParamDef>(playerSetup.AnimatorManager.Parameters).Values
             .ToList();
         VRCFTParameters.UpdateParameters(parameters);
     }
@@ -27,7 +27,7 @@ public class ParameterDriver
     {
         if (parameters == null) return true;
         List<CVRAnimatorManager.ParamDef> newParams =
-            new Dictionary<string, CVRAnimatorManager.ParamDef>(playerSetup.animatorManager.Parameters).Values.ToList();
+            new Dictionary<string, CVRAnimatorManager.ParamDef>(playerSetup.AnimatorManager.Parameters).Values.ToList();
         if (parameters.Count != newParams.Count) return true;
         for (int i = 0; i < newParams.Count; i++)
         {
@@ -40,7 +40,7 @@ public class ParameterDriver
 
     public void Update(UnifiedTrackingData data)
     {
-        if(playerSetup.animatorManager == null) return;
+        if(playerSetup.AnimatorManager == null) return;
         if(CheckForParameterUpdate()) UpdateParameters();
         parameters!.Where(x => x.type != AnimatorControllerParameterType.Trigger).ToList().ForEach(parameter =>
         {
@@ -51,13 +51,13 @@ public class ParameterDriver
                 switch (parameter.type)
                 {
                     case AnimatorControllerParameterType.Float:
-                        playerSetup.animatorManager.SetParameter(parameter.name, weight);
+                        playerSetup.AnimatorManager.SetParameter(parameter.name, weight);
                         break;
                     case AnimatorControllerParameterType.Bool:
-                        playerSetup.animatorManager.SetParameter(parameter.name, weight > 0.5f);
+                        playerSetup.AnimatorManager.SetParameter(parameter.name, weight > 0.5f);
                         break;
                     case AnimatorControllerParameterType.Int:
-                        playerSetup.animatorManager.SetParameter(parameter.name, Mathf.RoundToInt(weight));
+                        playerSetup.AnimatorManager.SetParameter(parameter.name, Mathf.RoundToInt(weight));
                         break;
                 }
             });
