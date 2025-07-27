@@ -54,6 +54,12 @@ internal class OptionalUI
             pageType.GetMethod("AddCategory", new Type[1] {typeof(string)})!.Invoke(rootPage,
                 new object[1] {MainMod.MOD_NAME + " Settings"});
         // Toggles
+        CreateToggle(Config.enabledInDesktop, categoryType, toggleType,
+            new object[3]
+            {
+                Config.enabledInDesktop.DisplayName, Config.enabledInDesktop.Description,
+                Config.enabledInDesktop.Value
+            });
         CreateToggle(Config.integratedTrackingSupport, categoryType, toggleType,
             new object[3]
             {

@@ -5,6 +5,7 @@ using ABI_RC.Core.Player;
 using ABI_RC.Core.Player.EyeMovement;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.FaceTracking;
+using ABI_RC.Systems.VRModeSwitch;
 using HarmonyLib;
 using MelonLoader;
 using Tobii.Gaming;
@@ -38,6 +39,16 @@ public class MainMod : MelonMod
     private bool loaded;
     private bool didIntegrate;
 
+    MainMod() => VRModeSwitchEvents.OnPostVRModeSwitch.AddListener(switchedToXr =>
+    {
+        if (Config.EnabledInDesktop || switchedToXr) return;
+
+        // If we're not in VR anymore, and we don't want the module to be on, we'll clear things out
+        HarmonyInstance.UnpatchSelf();
+        Hypernex.ExtendedTracking.FaceTrackingManager.Destroy();
+        loaded = false;
+    }); 
+
     public override void OnUpdate()
     {
         if(!loaded) return;
@@ -54,7 +65,12 @@ public class MainMod : MelonMod
 
     public override void OnLateUpdate()
     {
-        if(loaded) return;
+        if (loaded) return;
+        if (!Config.EnabledInDesktop && !MetaPort.Instance.isUsingVr)
+        {
+            optionalUI ??= new OptionalUI();
+            return;
+        }
         Player? localPlayer = GetLocalPlayer();
         if(FaceTrackingManager.Instance == null || EyeTrackingManager.Instance == null || localPlayer == null) return;
         if (Runner.Instance == null)
@@ -142,7 +158,7 @@ public class MainMod : MelonMod
             if(!Config.IntegratedTrackingSupport) NoIntegratedLoad();
             MelonLogger.Msg("Loaded VRCFT2CVR!");
             loaded = true;
-            optionalUI = new OptionalUI();
+            optionalUI ??= new OptionalUI();
         }
     }
 
