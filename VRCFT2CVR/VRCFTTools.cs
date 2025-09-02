@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
+using ABI_RC.Systems.FaceTracking;
 using ViveSR.anipal.Eye;
-using ViveSR.anipal.Lip;
 using VRCFaceTracking.Core.Params.Data;
 using VRCFaceTracking.Core.Params.Expressions;
 using Vector3 = UnityEngine.Vector3;
@@ -24,42 +24,44 @@ internal static class VRCFTTools
         };
     }
 
-    internal static EyeData_v2 GetEyeData(UnifiedEyeData eyeData) => new()
+    internal static EyeTrackingData GetEyeData(UnifiedEyeData eyeData, UnifiedTrackingData mouthData)
     {
-        expression_data = new EyeExpression
+        UnifiedSingleEyeData combined = eyeData.Combined();
+        EyeTrackingData eyeTrackingData = new EyeTrackingData
         {
-            left = new SingleEyeExpression
+            blinking = combined.Openness > 0.9f,
+            blinkLeft = 1f - eyeData.Left.Openness,
+            blinkRight = 1f - eyeData.Right.Openness,
+            gazePoint = new Vector3(combined.Gaze.x, combined.Gaze.y)
+        };
+        for (int i = 0; i < (int) UnifiedExpressions.Max; i++)
+        {
+            string? ueName = Enum.GetName(typeof(UnifiedExpressions), i);
+            for (int j = 0; j < (int) EyeTrackingData.UnifiedEyeExpression.Count; j++)
             {
-                eye_wide = eyeData.Left.Openness
-            },
-            right = new SingleEyeExpression
-            {
-                eye_wide = eyeData.Right.Openness
+                string? ueeName = Enum.GetName(typeof(EyeTrackingData.UnifiedEyeExpression), j);
+                if(ueName == null || ueeName == null || ueName != ueeName) continue;
+                eyeTrackingData.unifiedEyeExpressions[j] = mouthData.Shapes[i].Weight;
             }
-        },
-        verbose_data = new VerboseData
-        {
-            left = new SingleEyeData
-            {
-                eye_openness = eyeData.Left.Openness,
-                gaze_direction_normalized = Vector3.Normalize(new Vector3(eyeData.Left.Gaze.x, eyeData.Left.Gaze.y, 3f)),
-                gaze_origin_mm = new Vector3(eyeData.Left.Gaze.x, eyeData.Left.Gaze.y, 0),
-                pupil_diameter_mm = eyeData.Left.PupilDiameter_MM
-            },
-            right = new SingleEyeData
-            {
-                eye_openness = eyeData.Right.Openness,
-                gaze_direction_normalized = Vector3.Normalize(new Vector3(eyeData.Right.Gaze.x, eyeData.Right.Gaze.y, 3f)),
-                gaze_origin_mm = new Vector3(eyeData.Right.Gaze.x, eyeData.Right.Gaze.y, 0),
-                pupil_diameter_mm = eyeData.Right.PupilDiameter_MM
-            },
-            combined = GetCombined(eyeData)
         }
-    };
+        return eyeTrackingData;
+    }
 
-    private static float[] GetFaceWeights(UnifiedTrackingData trackingData)
+    internal static MouthTrackingData GetLipData(UnifiedTrackingData trackingData)
     {
-        float[] weights = new float[37];
+        MouthTrackingData mouthTrackingData = new MouthTrackingData();
+        // Mouth Expressions
+        for (int i = 0; i < (int) UnifiedExpressions.Max; i++)
+        {
+            string? ueName = Enum.GetName(typeof(UnifiedExpressions), i);
+            for (int j = 0; j < (int) EyeTrackingData.UnifiedEyeExpression.Count; j++)
+            {
+                string? uemName = Enum.GetName(typeof(MouthTrackingData.UnifiedMouthExpression), j);
+                if(ueName == null || uemName == null || ueName != uemName) continue;
+                mouthTrackingData.unifiedMouthExpressions[j] = trackingData.Shapes[i].Weight;
+            }
+        }
+        // Legacy Shapes
         SRanipal_LipShape_v2[] srValues = Enum.GetValues(typeof(SRanipal_LipShape_v2)).Cast<SRanipal_LipShape_v2>().ToArray();
         for (int i = 0; i < srValues.Length; i++)
         {
@@ -67,20 +69,12 @@ internal static class VRCFTTools
             if(shape >= SRanipal_LipShape_v2.Max) continue;
             try
             {
-                weights[i] = UnifiedSRanMapper.GetTransformedShape(shape, trackingData);
+                mouthTrackingData.legacyShapes[i] = UnifiedSRanMapper.GetTransformedShape(shape, trackingData);
             }
             catch(Exception){}
         }
-        return weights;
+        return mouthTrackingData;
     }
-
-    internal static LipData_v2 GetLipData(UnifiedTrackingData trackingData) => new()
-    {
-        prediction_data = new PredictionData_v2
-        {
-            blend_shape_weight = GetFaceWeights(trackingData)
-        }
-    };
 
     #region VRCFaceTracking
     /*

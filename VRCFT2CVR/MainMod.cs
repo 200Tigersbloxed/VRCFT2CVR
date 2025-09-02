@@ -1,24 +1,18 @@
 ﻿using System.Reflection;
-using System.Reflection.Emit;
 using ABI_RC.API;
 using ABI_RC.Core.Player;
-using ABI_RC.Core.Player.EyeMovement;
 using ABI_RC.Core.Savior;
 using ABI_RC.Systems.FaceTracking;
-using HarmonyLib;
 using MelonLoader;
-using Tobii.Gaming;
-using Tobii.XR;
 using UnityEngine;
 using VRCFaceTracking;
 using VRCFaceTracking.Core.Params.Data;
 using VRCFT2CVR;
 using Object = UnityEngine.Object;
 using Utils = VRCFaceTracking.Core.Utils;
-using Vector2 = VRCFaceTracking.Core.Types.Vector2;
 
-[assembly: MelonInfo(typeof(MainMod), MainMod.MOD_NAME, "1.3.1", "200Tigersbloxed")]
-[assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
+[assembly: MelonInfo(typeof(MainMod), MainMod.MOD_NAME, "1.4.0", "200Tigersbloxed")]
+[assembly: MelonGame("ChilloutVR", "ChilloutVR")]
 [assembly: MelonColor(255, 144, 242, 35)]
 [assembly: MelonAuthorColor(255, 252, 100, 0)]
 [assembly: MelonOptionalDependencies("BTKUILib")]
@@ -56,7 +50,7 @@ public class MainMod : MelonMod
     {
         if(loaded) return;
         Player? localPlayer = GetLocalPlayer();
-        if(FaceTrackingManager.Instance == null || EyeTrackingManager.Instance == null || localPlayer == null) return;
+        if(FaceTrackingManager.Instance == null || localPlayer == null) return;
         if (Runner.Instance == null)
         {
             GameObject runner = new GameObject("VRCFT2CVRRunner");
@@ -74,62 +68,24 @@ public class MainMod : MelonMod
         Hypernex.ExtendedTracking.FaceTrackingManager.Init(localPlayer, LoggerInstance);
         try
         {
-            if (!Config.IntegratedTrackingSupport) return;
-            MelonLogger.Warning("ITrackingModule and IEyeTrackingProvider implementation is experimental!");
-            HarmonyInstance.Patch(typeof(TobiiXR_Settings).GetMethod("GetProvider"),
-                new HarmonyMethod(typeof(TobiiAPI_GetProviderPatch).GetMethod("Prefix",
-                    BindingFlags.Static | BindingFlags.NonPublic)));
-            Type faceTrackingManagerType = typeof(FaceTrackingManager);
-            FieldInfo activeEyeField = faceTrackingManagerType.GetField("_activeEyeModule",
-                BindingFlags.Instance | BindingFlags.NonPublic)!;
-            FieldInfo activeLipField = faceTrackingManagerType.GetField("_activeLipModule",
-                BindingFlags.Instance | BindingFlags.NonPublic)!;
-            if (activeEyeField.GetValue(FaceTrackingManager.Instance) != null ||
-                activeLipField.GetValue(FaceTrackingManager.Instance) != null)
-            {
-                MetaPort.Instance.settings.SetSettingsBool("ImplementationVRViveFaceTracking", false);
-                MetaPort.Instance.settings.SetSettingsBool("ImplementationDesktopViveFaceTracking", false);
-                throw new Exception(
-                    "You have the Face Tracking enabled in settings! Please restart to use IntegratedTracking.");
-            }
-            if (EyeTrackingManager.Instance._settingBlinkingEnabled ||
-                EyeTrackingManager.Instance._settingTrackingEnabled)
-            {
-                MetaPort.Instance.settings.SetSettingsBool("ImplementationDesktopTobiiEyeTracking", false);
-                MetaPort.Instance.settings.SetSettingsBool("ImplementationDesktopTobiiEyeBlinking", false);
-                MetaPort.Instance.settings.SetSettingsBool("ImplementationVRTobiiEyeTracking", false);
-                MetaPort.Instance.settings.SetSettingsBool("ImplementationVRTobiiEyeBlinking", false);
-                throw new Exception(
-                    "You have the Face Tracking enabled in settings! Please restart to use IntegratedTracking.");
-            }
-            // Remove non-converted modules, as they can cause issues (i.e. SRanipal)
-            FieldInfo registeredModulesField = faceTrackingManagerType.GetField("_registeredTrackingModules", BindingFlags.Instance | BindingFlags.NonPublic)!;
-            List<ITrackingModule> registeredModules =
-                (List<ITrackingModule>) registeredModulesField.GetValue(FaceTrackingManager.Instance);
-            registeredModules.Clear();
-            registeredModules.Add(GlobalModule);
-            registeredModulesField.SetValue(FaceTrackingManager.Instance, registeredModules);
-            // Start the Face Tracking
-            FaceTrackingManager.Instance.Initialize();
-            faceTrackingManagerType.GetProperty("_settingEnabled")!.GetSetMethod(true)
-                .Invoke(FaceTrackingManager.Instance, new object[1] {true});
-            // Eye Tracking
-            object _tobii =
-                typeof(EyeTrackingManager).GetField("_tobii", BindingFlags.Instance | BindingFlags.NonPublic)!
-                    .GetValue(
-                        EyeTrackingManager.Instance);
-            object Settings = _tobii.GetType().GetField("Settings").GetValue(_tobii);
-            Settings.GetType().GetField("_eyeTrackingProvider", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .SetValue(Settings, GlobalModule);
-            typeof(EyeTrackingManager).GetProperty("_settingTrackingEnabled")!.GetSetMethod(true)
-                .Invoke(EyeTrackingManager.Instance, new object[1] {true});
-            typeof(EyeTrackingManager).GetProperty("_settingBlinkingEnabled")!.GetSetMethod(true)
-                .Invoke(EyeTrackingManager.Instance, new object[1] {true});
-            typeof(EyeTrackingManager).GetMethod("Initialize", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .Invoke(
-                    EyeTrackingManager.Instance, Array.Empty<object>());
-            HarmonyInstance.PatchAll();
-            didIntegrate = true;
+            if(!Config.IntegratedTrackingSupport) return;
+            Type faceTrackingType = typeof(FaceTrackingManager);
+            FaceTrackingManager.Instance.RegisterEyeModule(GlobalModule);
+            FaceTrackingManager.Instance.RegisterMouthModule(GlobalModule);
+            // Find the index on the Tracking Modules
+            List<IEyeTrackingModule> _eyeTrackingModules =
+                (List<IEyeTrackingModule>) faceTrackingType.GetField("_eyeTrackingModules",
+                    BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(FaceTrackingManager.Instance);
+            List<IMouthTrackingModule> _mouthTrackingModules =
+                (List<IMouthTrackingModule>) faceTrackingType.GetField("_mouthTrackingModules",
+                    BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(FaceTrackingManager.Instance);
+            int eyeIndex = _eyeTrackingModules.FindIndex(x => x == GlobalModule) + 1;
+            int mouthIndex = _mouthTrackingModules.FindIndex(x => x == GlobalModule) + 1;
+            // Update the index
+            SetEyeTrackingModuleIndex(eyeIndex);
+            SetEyeTrackingModuleIndex(mouthIndex);
+            // awesomeness
+            ForceActiveModule(faceTrackingType);
         }
         catch (Exception e)
         {
@@ -148,88 +104,34 @@ public class MainMod : MelonMod
 
     public override void OnApplicationQuit() => Hypernex.ExtendedTracking.FaceTrackingManager.Destroy();
 
+    private void SetEyeTrackingModuleIndex(int index)
+    {
+        /*faceTrackingType.GetMethod("SetActiveEyeModule", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(
+            FaceTrackingManager.Instance, new object[1] {index});*/
+        MetaPort.Instance.settings.SetSettingsInt("ImplementationFaceTrackingEyeModule", index);
+    }
+
+    private void SetMouthTrackingModuleIndex(int index)
+    {
+        /*faceTrackingType.GetMethod("SetActiveMouthModule", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(
+            FaceTrackingManager.Instance, new object[1] {index});*/
+        MetaPort.Instance.settings.SetSettingsInt("ImplementationFaceTrackingMouthModule", index);
+    }
+
+    private void ForceActiveModule(Type faceTrackingType)
+    {
+        PropertyInfo eyeProperty = faceTrackingType.GetProperties().First(x => x.Name == "ActiveEyeModule");
+        PropertyInfo mouthProperty = faceTrackingType.GetProperties().First(x => x.Name == "ActiveMouthModule");
+        MethodInfo eyeMethod = eyeProperty.GetSetMethod(true);
+        MethodInfo mouthMethod = mouthProperty.GetSetMethod(true);
+        eyeMethod.Invoke(FaceTrackingManager.Instance, new IEyeTrackingModule[1] {GlobalModule});
+        mouthMethod.Invoke(FaceTrackingManager.Instance, new IMouthTrackingModule[1] {GlobalModule});
+    }
+
     private void NoIntegratedLoad()
     {
-        typeof(FaceTrackingManager).GetProperty("_settingEnabled")!.GetSetMethod(true)
-            .Invoke(FaceTrackingManager.Instance, new object[1] {false});
-        typeof(EyeTrackingManager).GetProperty("_settingTrackingEnabled")!.GetSetMethod(true)
-            .Invoke(EyeTrackingManager.Instance, new object[1] {false});
-        typeof(EyeTrackingManager).GetProperty("_settingBlinkingEnabled")!.GetSetMethod(true)
-            .Invoke(EyeTrackingManager.Instance, new object[1] {false});
-    }
-
-    [HarmonyPatch(typeof(TobiiAPI))]
-    [HarmonyPatch(nameof(TobiiAPI.IsConnected), MethodType.Getter)]
-    private class TobiiAPI_getIsConnectedPatch
-    {
-        static bool Prefix(ref bool __result)
-        {
-            __result = true;
-            return false;
-        }
-    }
-    
-    [HarmonyPatch(typeof(TobiiXR_Settings), nameof(TobiiXR_Settings.GetProvider), new Type[0])]
-    private class TobiiAPI_GetProviderPatch
-    {
-        static bool Prefix(ref IEyeTrackingProvider __result)
-        {
-            if (!GlobalModule.IsEyeDataAvailable()) return true;
-            __result = GlobalModule;
-            return false;
-        }
-    }
-
-    [HarmonyPatch(typeof(TobiiAPI), nameof(TobiiAPI.GetGazePoint), new Type[0])]
-    private class TobiiAPI_GetGazePointPatch
-    {
-        private static float ConvertRange(float x) => x < -1 || x > 1
-            ? throw new ArgumentOutOfRangeException(nameof(x), "Input value must be in the range -1 to 1.")
-            : (x + 1) / 2.00f;
-        
-        static bool Prefix(ref GazePoint __result)
-        {
-            if (!GlobalModule.IsEyeDataAvailable()) return true;
-            Vector2 gaze = UnifiedTracking.Data.Eye.Combined().Gaze;
-            __result = new GazePoint(new UnityEngine.Vector2(ConvertRange(gaze.x), ConvertRange(gaze.y)),
-                Time.unscaledTime / 1000000f, DateTime.Now.Ticks / (TimeSpan.TicksPerMillisecond / 1000));
-            return false;
-        }
-    }
-
-    [HarmonyPatch(typeof(TobiiXR), nameof(TobiiXR.GetEyeTrackingData), new Type[1]{typeof(TobiiXR_TrackingSpace)})]
-    private class TobiiXR_GetEyeTrackingDataPatch
-    {
-        static bool Prefix(ref TobiiXR_EyeTrackingData __result, TobiiXR_TrackingSpace trackingSpace)
-        {
-            if (!GlobalModule.IsEyeDataAvailable()) return true;
-            TobiiXR_EyeTrackingData eyeTrackingData = GlobalModule.EyeTrackingDataLocal;
-            eyeTrackingData.GazeRay.IsValid = false;
-            __result = eyeTrackingData;
-            return false;
-        }
-    }
-    
-    [HarmonyPatch(typeof(EyeMovementController), "ProcessTobiiEyeTracking")]
-    private class EyeMovementController_ProcessTobiiEyeTrackingPatch
-    {
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            var codes = new List<CodeInstruction>(instructions);
-            for (int i = 0; i < codes.Count; i++)
-            {
-                if (codes[i].opcode == OpCodes.Ldfld &&
-                    codes[i].operand is FieldInfo fieldInfo &&
-                    fieldInfo.Name == "isUsingVr" &&
-                    fieldInfo.DeclaringType!.Name == "MetaPort")
-                {
-                    codes.RemoveAt(i - 1);
-                    codes.Insert(i - 1, new CodeInstruction(OpCodes.Nop));
-                    codes[i] = new CodeInstruction(OpCodes.Ldc_I4_1);
-                }
-            }
-            return codes.AsEnumerable();
-        }
+        SetEyeTrackingModuleIndex(0);
+        SetMouthTrackingModuleIndex(0);
     }
 
     private Player? GetLocalPlayer() => PlayerAPI.LocalPlayerInternal;
